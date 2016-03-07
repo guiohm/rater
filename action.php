@@ -88,6 +88,7 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
         // Config settings
         $rater_ip_voting_restriction = $this->getConf('voting_restriction'); // restrict ip address voting (true or false)
         $rater_ip_vote_qty           = $this->getConf('vote_qty');           // how many times an ip address can vote
+        $rater_can_edit_vote         = $this->getConf('can_edit_vote');      // overwrite vote if exists
         $rater_already_rated_msg     = sprintf($this->getConf('already_rated_msg'),$rater_ip_vote_qty);
         $rater_not_selected_msg      = $this->getConf('not_selected_msg');
         $rater_thankyou_msg          = $this->getConf('thankyou_msg');
@@ -113,6 +114,7 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
     //        save vote
         $rater_filename = metaFN('rater_'.$rater_id.'_'.$rater_name.'_'.$rater_type, '.rating');
     // trace ip or login
+        $file_overwritten = false;
         $rater_file=fopen($rater_filename,"c+");
         $rater_str="";
         $rater_str = rtrim(fread($rater_file, 1024*8),$rater_end_of_line_char);
@@ -123,15 +125,24 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
                 foreach ($rater_data as $d){
                     $rater_tmp=explode("|",$d);
                     $rater_oldip=str_replace($rater_end_of_line_char,"",$rater_tmp[1]);
-                    if($rater_ip==$rater_oldip){
-                        $rater_ip_vote_count++;
+                    if ($rater_ip==$rater_oldip) {
+                        if ($rater_can_edit_vote) {
+                            $rater_str = str_replace($d, $rater_rating."|".$rater_ip.$rater_end_of_line_char, $rater_str);
+                            $this->overwrite_file($rater_file, $rater_str);
+                            $file_overwritten = true;
+                        } else {
+                            $rater_ip_vote_count++;
+                        }
+                        break;
                     }
                 }
                 if ($rater_ip_vote_count > ($rater_ip_vote_qty - 1)){
                     $rater_msg=$rater_already_rated_msg;
                     $addMXG = "&info=ppp";
                 } else {
-                    fwrite($rater_file,$rater_rating."|".$rater_ip.$rater_end_of_line_char);
+                    if (!$file_overwritten) {
+                        $this->append_to_file($rater_file, $rater_str, $rater_rating."|".$rater_ip);
+                    }
                     $rater_msg=$rater_thankyou_msg;
                     if($rater_rating===2) {
                         $rater_msg .= $this->getLang('msg_why');
@@ -142,14 +153,13 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
                     }
                 }
             } else {
-                fwrite($rater_file,$rater_rating."|".$rater_ip.$rater_end_of_line_char);
+                $this->append_to_file($rater_file, $rater_str, $rater_rating."|".$rater_ip);
                 $rater_msg=$rater_thankyou_msg;
             }
         } else {
-            fwrite($rater_file,$rater_rating."|".$rater_ip.$rater_end_of_line_char);
+            $this->append_to_file($rater_file, $rater_str, $rater_rating."|".$rater_ip);
             $rater_msg=$rater_thankyou_msg;
         }
-        fclose($rater_file);
 
     //            msg($rater_rating."|".$rater_ip.$rater_end_of_line_char,0);
 
@@ -158,4 +168,16 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
             '<a href="doku.php?id='.$ID.'#'.$anker_id.'" />'.$alink_Back.'</a></div>';
     }
 /******************************************************************************/
+
+    function overwrite_file($file, $str) {
+        rewind($file);
+        fwrite($file, $str);
+        fflush($file);
+        ftruncate($file, ftell($file));
+        fclose($file);
+    }
+
+    function append_to_file($file, $content, $new_content) {
+        $this->overwrite_file($file, $content.$rater_end_of_line_char.$new_content.$rater_end_of_line_char);
+    }
 }
