@@ -42,24 +42,19 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
 */
      function _handle_act(&$event, $param) {
          if ($event->data === 'rate_voteup') {
-             $this->raterfile = $_GET['rater_file'];
-             $this->rater_id = $_GET['rater_id'];
-             $this->rater_name = $_GET['rater_name'];
-             $this->rater_ip = $_GET['rater_ip'];
-             $this->rater_end = $_GET['rater_end'];
-             $this->anker_id = $_GET['anker'];
              $this->vote = 1;
          }
          elseif ($event->data === 'rate_votedown') {
-             $this->raterfile = $_GET['rater_file'];
-             $this->rater_id = $_GET['rater_id'];
-             $this->rater_name = $_GET['rater_name'];
-             $this->rater_ip = $_GET['rater_ip'];
-             $this->rater_end = $_GET['rater_end'];
-             $this->anker_id = $_GET['anker'];
              $this->vote = 2;
          }
          else return;
+
+         $this->raterfile = $_GET['rater_file'];
+         $this->rater_id = $_GET['rater_id'];
+         $this->rater_name = $_GET['rater_name'];
+         $this->rater_ip = $_GET['rater_ip'];
+         $this->rater_end = $_GET['rater_end'];
+         $this->anker_id = $_GET['anker'];
 
          $event->preventDefault(); // https://www.dokuwiki.org/devel:events#event_object
      }
