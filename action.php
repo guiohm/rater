@@ -15,7 +15,7 @@ require_once(DOKU_PLUGIN.'action.php');
 class action_plugin_rater extends DokuWiki_Action_Plugin {
 
     var $parameter = "";
- 
+
   /**
    * return some info
    */
@@ -48,7 +48,7 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
              $this->rater_ip = $_GET['rater_ip'];
              $this->rater_end = $_GET['rater_end'];
              $this->anker_id = $_GET['anker'];
-             $this->vote = 1;         
+             $this->vote = 1;
          }
          elseif ($event->data === 'rate_votedown') {
              $this->raterfile = $_GET['rater_file'];
@@ -57,11 +57,11 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
              $this->rater_ip = $_GET['rater_ip'];
              $this->rater_end = $_GET['rater_end'];
              $this->anker_id = $_GET['anker'];
-             $this->vote = 2;         
+             $this->vote = 2;
          }
          else return;
-         
-         $event->preventDefault(); // https://www.dokuwiki.org/devel:events#event_object  
+
+         $event->preventDefault(); // https://www.dokuwiki.org/devel:events#event_object
      }
 /******************************************************************************
 **  Generate output
@@ -70,17 +70,17 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
       if (($data->data == 'rate_voteup') && ($this->vote == 1)) {
               $data->preventDefault();
               $rater_rating = 1;
-      } 
+      }
       elseif (($data->data == 'rate_votedown') && ($this->vote == 2)) {
               $data->preventDefault();
               $rater_rating = 2;
       }
       else { return; }
-      
-      global $ID;          
+
+      global $ID;
       global $lang;
       global $conf;
-      
+
       $rater_type = "vote";
       $rater_id   = $this->rater_id;
       $rater_name = $this->rater_name;
@@ -102,11 +102,11 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
           $msg_votended                = $this->getLang('msg_votended');
           $alink_Back                  = $this->getLang('alink_Back');
           $today                       = date('d.m.Y');
-          
+
           //check if vote period already ended
           if (($rater_end!='never') && (strtotime($today) > strtotime($rater_end)))
               {$rater_endmsg =sprintf($msg_votended,date('d.m.Y',strtotime($rater_end))).'<br>';
-               
+
                echo '<meta http-equiv="refresh" content="1; URL=doku.php?id='.$ID.'#'.$anker_id.'"><div class="thumb__negative_feedback">'.$rater_endmsg.
                     '<a href="doku.php?id='.$ID.'" />'.$alink_Back.'</a></div>';
                return;
