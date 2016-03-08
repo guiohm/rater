@@ -93,9 +93,6 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
         $rater_not_selected_msg      = $this->getConf('not_selected_msg');
         $rater_thankyou_msg          = $this->getConf('thankyou_msg');
         $rater_generic_text          = $this->getConf('generic_text');       // generic item text
-        $rater_end_of_line_char      = $this->getConf('eol_char');           // to separate the records
-        //          msg("eol_char = |".$rater_end_of_line_char."|",0);
-        if ($rater_end_of_line_char == '') $rater_end_of_line_char = '\n';
 
         $msg_votended                = $this->getLang('msg_votended');
         $alink_Back                  = $this->getLang('alink_Back');
@@ -115,19 +112,27 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
         $rater_filename = metaFN('rater_'.$rater_id.'_'.$rater_name.'_'.$rater_type, '.rating');
     // trace ip or login
         $file_overwritten = false;
+        $rater_str= "";
+
+        clearstatcache();
         $rater_file=fopen($rater_filename,"c+");
-        $rater_str="";
-        $rater_str = rtrim(fread($rater_file, 1024*8),$rater_end_of_line_char);
+        // Ensure file is not being written by another process and wait if it is
+        while(1) {
+            if (flock($rater_file, LOCK_EX)) {
+                break;
+            }
+        }
+        $rater_str = rtrim(fread($rater_file, 1024*8),PHP_EOL);
         if ($rater_str!=""){
             if ($rater_ip_voting_restriction){
-                $rater_data=explode($rater_end_of_line_char,$rater_str);
+                $rater_data=explode(PHP_EOL,$rater_str);
                 $rater_ip_vote_count=0;
                 foreach ($rater_data as $d){
                     $rater_tmp=explode("|",$d);
-                    $rater_oldip=str_replace($rater_end_of_line_char,"",$rater_tmp[1]);
-                    if ($rater_ip==$rater_oldip) {
+                    $rater_oldip=str_replace(PHP_EOL,"",$rater_tmp[1]);
+                    if ($rater_ip && $rater_ip==$rater_oldip) {
                         if ($rater_can_edit_vote) {
-                            $rater_str = str_replace($d, $rater_rating."|".$rater_ip.$rater_end_of_line_char, $rater_str);
+                            $rater_str = str_replace($d, $rater_rating."|".$rater_ip, $rater_str);
                             $this->overwrite_file($rater_file, $rater_str);
                             $file_overwritten = true;
                         } else {
@@ -141,7 +146,7 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
                     $addMXG = "&info=ppp";
                 } else {
                     if (!$file_overwritten) {
-                        $this->append_to_file($rater_file, $rater_str, $rater_rating."|".$rater_ip);
+                        $this->append_to_file($rater_file, $rater_rating."|".$rater_ip, $rater_str);
                     }
                     $rater_msg=$rater_thankyou_msg;
                     if($rater_rating===2) {
@@ -153,15 +158,13 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
                     }
                 }
             } else {
-                $this->append_to_file($rater_file, $rater_str, $rater_rating."|".$rater_ip);
+                $this->append_to_file($rater_file, $rater_rating."|".$rater_ip, $rater_str);
                 $rater_msg=$rater_thankyou_msg;
             }
         } else {
-            $this->append_to_file($rater_file, $rater_str, $rater_rating."|".$rater_ip);
+            $this->append_to_file($rater_file, $rater_rating."|".$rater_ip);
             $rater_msg=$rater_thankyou_msg;
         }
-
-    //            msg($rater_rating."|".$rater_ip.$rater_end_of_line_char,0);
 
       // reload original page
         echo '<meta http-equiv="refresh" content="2; URL=doku.php?id='.$ID.'#'.$anker_id.'"><div class="thumb__positive_feedback">'.$rater_ip.' : '.$rater_msg.'<br />'.
@@ -173,11 +176,12 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
         rewind($file);
         fwrite($file, $str);
         fflush($file);
-        ftruncate($file, ftell($file));
+        flock($file, LOCK_UN);
         fclose($file);
     }
 
-    function append_to_file($file, $content, $new_content) {
-        $this->overwrite_file($file, $content.$rater_end_of_line_char.$new_content.$rater_end_of_line_char);
+    function append_to_file($file, $new_content, $content='') {
+        $str = ($content ? $content.PHP_EOL : '' ).$new_content.PHP_EOL;
+        $this->overwrite_file($file, $str);
     }
 }

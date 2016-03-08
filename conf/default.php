@@ -10,4 +10,3 @@ $conf['already_rated_msg']  ="You have already rated this item. You were allowed
 $conf['not_selected_msg']   ="You have not selected a rating value.";
 $conf['thankyou_msg']       ="Thank you for voting.";
 $conf['generic_text']       ="this item";        // generic item text
-$conf['eol_char']           ="\n";               // to separate the records
