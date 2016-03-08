@@ -93,6 +93,9 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
         $rater_not_selected_msg      = $this->getConf('not_selected_msg');
         $rater_thankyou_msg          = $this->getConf('thankyou_msg');
         $rater_generic_text          = $this->getConf('generic_text');       // generic item text
+        $rater_end_of_line_char      = $this->getConf('eol_char');           // to separate the records
+        //          msg("eol_char = |".$rater_end_of_line_char."|",0);
+        if ($rater_end_of_line_char == '') $rater_end_of_line_char = PHP_EOL;
 
         $msg_votended                = $this->getLang('msg_votended');
         $alink_Back                  = $this->getLang('alink_Back');
@@ -122,14 +125,14 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
                 break;
             }
         }
-        $rater_str = rtrim(fread($rater_file, 1024*8),PHP_EOL);
+        $rater_str = rtrim(fread($rater_file, 1024*8),$rater_end_of_line_char);
         if ($rater_str!=""){
             if ($rater_ip_voting_restriction){
-                $rater_data=explode(PHP_EOL,$rater_str);
+                $rater_data=explode($rater_end_of_line_char,$rater_str);
                 $rater_ip_vote_count=0;
                 foreach ($rater_data as $d){
                     $rater_tmp=explode("|",$d);
-                    $rater_oldip=str_replace(PHP_EOL,"",$rater_tmp[1]);
+                    $rater_oldip=str_replace($rater_end_of_line_char,"",$rater_tmp[1]);
                     if ($rater_ip && $rater_ip==$rater_oldip) {
                         if ($rater_can_edit_vote) {
                             $rater_str = str_replace($d, $rater_rating."|".$rater_ip, $rater_str);
@@ -166,6 +169,8 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
             $rater_msg=$rater_thankyou_msg;
         }
 
+    //            msg($rater_rating."|".$rater_ip.$rater_end_of_line_char,0);
+
       // reload original page
         echo '<meta http-equiv="refresh" content="2; URL=doku.php?id='.$ID.'#'.$anker_id.'"><div class="thumb__positive_feedback">'.$rater_ip.' : '.$rater_msg.'<br />'.
             '<a href="doku.php?id='.$ID.'#'.$anker_id.'" />'.$alink_Back.'</a></div>';
@@ -181,7 +186,8 @@ class action_plugin_rater extends DokuWiki_Action_Plugin {
     }
 
     function append_to_file($file, $new_content, $content='') {
-        $str = ($content ? $content.PHP_EOL : '' ).$new_content.PHP_EOL;
+        $eol_char = $this->getConf('eol_char');
+        $str = ($content ? $content.$eol_char : '' ).$new_content.$eol_char;
         $this->overwrite_file($file, $str);
     }
 }

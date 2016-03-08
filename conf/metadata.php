@@ -13,3 +13,4 @@ $meta['already_rated_msg']  = array('string');
 $meta['not_selected_msg']   = array('string');
 $meta['thankyou_msg']       = array('string');
 $meta['generic_text']       = array('string'); // generic item text
+$meta['eol_char']           = array('string'); // may want to change for different operating systems
